@@ -41,14 +41,28 @@ export default function Project() {
 
             setLanguage(languageMap[fileExtension!]);
             const content = await fetchFileContent(node.name);
-            console.log(content);
             setSelectedFile(node.name);
             setFileContent(content || "");
         }
     }
 
-    const fetchFileContent = async (fileName: string) => {
+    const fullFilePath = (fileName: string, nodes: Node[], currentPath = ""): string | undefined => {
+        for (let node of nodes) {
+            const newPath = currentPath ? `${currentPath}/${node.name}` : node.name;
+            if (node.name === fileName) {
+                return newPath;
+            }
+            if (node.nodes) {
+                const res = fullFilePath(fileName, node.nodes, newPath);
+                if (res) return res;
+            }
+        }
+        return undefined;
+    };
+
+    const fetchFileContent = async (filename: string) => {
         if (socket) {
+            const fileName = fullFilePath(filename, nodes);
             socket.emit("file:read", { fileName });
             return new Promise<string>((resolve) => {
                 socket.on("file:content", (content: string) => {
@@ -63,7 +77,6 @@ export default function Project() {
             socket.emit('files:rw');
 
             socket.on('files:rw', (data: any) => {
-                console.log(data);
                 setNodes(data);
             });
 
@@ -73,8 +86,6 @@ export default function Project() {
             });
 
             setTimeout(() => {
-                console.log("Writing file content to server");
-                console.log(selectedFile);
                 socket.emit('files:write', { filename: selectedFile, content: fileContent });
             },2000);
 

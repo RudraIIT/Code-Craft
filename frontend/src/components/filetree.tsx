@@ -1,6 +1,7 @@
 import { ChevronRightIcon } from '@heroicons/react/16/solid';
 import { DocumentIcon, FolderIcon } from '@heroicons/react/24/solid';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSocketContext } from '@/context/SocketContext';
 
 type Node = {
   name: string;
@@ -9,14 +10,21 @@ type Node = {
 
 export function FileTree({ node, onFileClick }: { node: Node; onFileClick: (node: Node) => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { socket } = useSocketContext();
 
   const handleClick = () => {
     if (!node.nodes) {
-      onFileClick(node); // Trigger the callback if it's a file
+      onFileClick(node); 
     } else {
-      setIsOpen(!isOpen); // Toggle folder open/close
+      setIsOpen(!isOpen); 
     }
   };
+
+  useEffect(() => {
+    if(socket) {
+      socket.emit('files:rw');
+    }
+  },[socket]);
 
   return (
     <li key={node.name}>

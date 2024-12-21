@@ -58,10 +58,10 @@ export function CodeEditor({ fileContent, language, onChange }: CodeEditorProps)
       language={language}
       value={fileContent}
       theme="vs-dark"
-      onChange={onChange} // Callback to handle changes in the editor
+      onChange={onChange} 
       options={{
-        automaticLayout: true, // Enable automatic resizing
-        minimap: { enabled: false }, // Optional: Hide the minimap
+        automaticLayout: true, 
+        minimap: { enabled: false }, 
       }}
     />
   );

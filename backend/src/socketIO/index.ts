@@ -33,6 +33,7 @@ let containerCount = 0;
 const clientContainers: { [key: string]: Docker.Container } = {};
 
 const users: { [key: string]: any } = {}
+const activeUsers: { [key: string]: NodeJS.Timeout } = {}
 
 const sendFiles = async (pathToRead: string): Promise<Node[]> => {
     try {
@@ -76,6 +77,10 @@ io.on("connection", (socket) => {
 
     sendUpatedFiles();
 
+    socket.on('files:rw', () => {
+        sendUpatedFiles();
+    });
+
     watcher.on('all', async (event, path) => {
         await sendUpatedFiles();
     });
@@ -99,10 +104,6 @@ io.on("connection", (socket) => {
                         docker.modem.followProgress(stream, resolve, reject);
                     });
                 })
-            }
-
-            if (clientContainers[userId]) {
-                await clientContainers[userId].remove();
             }
 
             const container = await docker.createContainer({
@@ -151,17 +152,6 @@ io.on("connection", (socket) => {
                 })
 
                 clientContainers[userId] = container;
-
-                socket.on('disconnect', async () => {
-                    console.log('Disconnecting container: ', socket.id)
-                    try {
-                        await container.remove();
-                    } catch (error) {
-                        console.log('Error stopping container: ', error)
-                    }
-
-                    delete clientContainers[userId];
-                })
             })
         } catch (error) {
             console.error(error)
@@ -172,7 +162,7 @@ io.on("connection", (socket) => {
         try {
             const filePath = path.join(workspacePath, fileName);
 
-            if(!fs.existsSync(filePath)) {
+            if (!fs.existsSync(filePath)) {
                 console.log('File does not exist: ', filePath);
                 return;
             }
@@ -186,30 +176,102 @@ io.on("connection", (socket) => {
 
     })
 
-    socket.on('files:write', async ({filename,content}) => {
+    socket.on('files:write', async ({ filename, content }) => {
         try {
-            if(filename === undefined || content === undefined) {
+            if (filename === undefined || content === undefined) {
                 console.error('Filename or content is undefined');
                 return;
             }
 
             const filePath = path.join(workspacePath, filename);
 
-            if(!fs.existsSync(filePath)) {
+            if (!fs.existsSync(filePath)) {
                 console.log('File does not exist: ', filePath);
                 return;
             }
-            
+
             await fs.promises.writeFile(filePath, content, 'utf-8');
-        
+
         } catch (error) {
             console.error('Error writing file: ', error);
         }
     })
 
-    socket.on('disconnect', () => {
-        if (userId) {
-            delete users[userId as string];
+    socket.on('disconnect', async () => {
+        console.log('Disconnecting container: ', socket.id)
+        activeUsers[userId] = setTimeout(async () => {
+            try {
+                if (clientContainers[userId]) {
+                    await clientContainers[userId].stop();
+                    await clientContainers[userId].remove();
+                    delete clientContainers[userId];
+                }
+            } catch (error) {
+                console.error('Error stopping container: ', error);
+            }
+        }, 30000);
+    })
+
+    socket.on('reconnect', async () => {
+        console.log('Reconnecting container: ', socket.id)
+        if (activeUsers[userId]) {
+            clearTimeout(activeUsers[userId]);
+            delete activeUsers[userId];
+        }
+
+        if (!clientContainers[userId]) {
+            console.log(`Creating new container for user: ${userId}`);
+            const container = await docker.createContainer({
+                Image: 'ubuntu:latest',
+                name: `${socket.id}-${++containerCount}`,
+                Tty: true,
+                Cmd: ['/bin/bash'],
+                OpenStdin: true,
+                StdinOnce: true,
+                HostConfig: {
+                    Binds: ['/home/rudra/Desktop/Container:/workspace'],
+                    NetworkMode: 'bridge',
+                },
+                WorkingDir: `/workspace/${userId}`,
+            });
+        
+            await container.start();
+            clientContainers[userId] = container;
+        }
+        
+
+        const container = clientContainers[userId];
+
+        if (container) {
+            const exec = await container.exec({
+                AttachStdin: true,
+                AttachStdout: true,
+                AttachStderr: true,
+                Tty: true,
+                Cmd: ['bash'],
+            })
+
+            exec.start({ hijack: true, stdin: true }, (err: any, stream: any) => {
+                if (err) {
+                    console.error('Error starting exec:', err);
+                    return;
+                }
+
+                stream.on('data', (data: any) => {
+                    const streamType = data.readUInt8(0);
+                    const payload = data.slice(8);
+
+                    if (streamType === 1) {
+                        socket.emit('terminal:data', payload.toString());
+                    } else if (streamType === 2) {
+                        console.error('Error:', payload.toString());
+                    }
+                });
+
+                socket.on('terminal:write', (data) => {
+                    stream.write(data);
+                });
+            });
         }
     });
 });
