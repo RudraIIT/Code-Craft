@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/controllers/userController.ts","./src/db/index.ts","./src/routes/userRoute.ts","./src/socketIO/index.ts","./src/utils/jwtToken.ts"],"version":"5.7.2"}
