@@ -53,7 +53,12 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 email,
             },
         });
-        if (!user) {
+        if (!user || !user.password) {
+            res.status(400).json({ error: 'Invalid data' });
+            return;
+        }
+        const isPasswordMatched = yield bcryptjs_1.default.compare(password, user.password);
+        if (!isPasswordMatched) {
             res.status(400).json({ error: 'Invalid data' });
             return;
         }

@@ -45,8 +45,15 @@ const loginUser = async(req:Request, res:Response) => {
             },
         });
 
-        if(!user) {
-            res.status(400).json({error: 'Invalid data'});
+        if (!user || !user.password) {
+            res.status(400).json({ error: 'Invalid data' });
+            return;
+        }
+
+        const isPasswordMatched = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordMatched) {
+            res.status(400).json({ error: 'Invalid data' });
             return;
         }
 

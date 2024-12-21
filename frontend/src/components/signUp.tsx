@@ -9,6 +9,9 @@ import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import logo from '@/assets/form.svg'
 import Cookies from "js-cookie"
+import { useAuth } from "@/context/AuthContext"
+import { useToast } from "@/hooks/use-toast"
+import { Link } from "react-router-dom"
 
 export function SignUpForm({
     className,
@@ -18,6 +21,8 @@ export function SignUpForm({
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
+    const { setUser } = useAuth();
+    const { toast } = useToast(); 
 
     const handleSubmit = async () => {
         try {
@@ -25,15 +30,25 @@ export function SignUpForm({
                 name,
                 email,
                 password,
-            },{
+            }, {
                 withCredentials: true
             });
-            
+
+            toast({
+                title: "Creating account",
+                description: "Please wait...",
+            })
+
             if (response.data.success) {
+                toast({
+                    title: "Account created",
+                    description: "You have successfully created an account",
+                })
                 const { token, userId } = response.data;
                 Cookies.set('token', token, { expires: 7, secure: true });
                 Cookies.set('user', userId, { expires: 7, secure: true });
-                navigate('/');
+                setUser(userId);
+                navigate('/', { replace: true });
             }
         } catch (error) {
             console.error(error)
@@ -123,9 +138,9 @@ export function SignUpForm({
                                     </div>
                                     <div className="text-center text-sm">
                                         Already have an account?{" "}
-                                        <a href="#" className="underline underline-offset-4">
+                                        <Link to={'/signin'} className="underline underline-offset-4">
                                             Sign in
-                                        </a>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>
