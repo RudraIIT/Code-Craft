@@ -20,6 +20,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSocketContext } from "../context/SocketContext"
 import { useToast } from "@/hooks/use-toast"
+import { useProject } from "@/context/ProjectContext"
 
 export function Dashboard() {
     const { socket } = useSocketContext();
@@ -28,6 +29,7 @@ export function Dashboard() {
     const [framework, setFramework] = useState("")
     const navigate = useNavigate()
     const { toast } = useToast();
+    const { setProject } = useProject();
 
     const handleSubmit = () => {
         if (!projectName) {
@@ -47,6 +49,8 @@ export function Dashboard() {
             })
             return;
         }
+
+        setProject(projectName)
 
         if (socket) {
             setClicked(!clicked)

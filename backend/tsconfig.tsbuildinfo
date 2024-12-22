@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/controllers/messageController.ts","./src/controllers/userController.ts","./src/db/index.ts","./src/routes/projectRoute.ts","./src/routes/userRoute.ts","./src/socketIO/index.ts","./src/utils/jwtToken.ts"],"version":"5.7.2"}
+{"root":["./src/index.ts","./src/controllers/projectController.ts","./src/controllers/userController.ts","./src/db/index.ts","./src/routes/projectRoute.ts","./src/routes/userRoute.ts","./src/socketIO/index.ts","./src/utils/jwtToken.ts"],"version":"5.7.2"}

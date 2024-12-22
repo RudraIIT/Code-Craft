@@ -1,16 +1,17 @@
 import './App.css'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { SocketProvider } from './context/SocketContext'
-import {BrowserRouter,Routes, Route,Navigate} from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { SignUpForm } from './components/signUp'
 import { SignInForm } from './components/signIn'
 import { Dashboard } from './components/dashboard'
 import Project from './components/project'
 import { Toaster } from './components/ui/toaster'
 import ProfilePage from './components/profilePage'
+import { ProjectProvider } from './context/ProjectContext'
 
-function AppRoutes () {
-  const {user} = useAuth();
+function AppRoutes() {
+  const { user } = useAuth();
 
   return (
     <Routes>
@@ -28,10 +29,12 @@ function App() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <BrowserRouter>
-          <AppRoutes />
-          <Toaster />
-        </BrowserRouter>
+        <ProjectProvider>
+          <BrowserRouter>
+            <AppRoutes />
+            <Toaster />
+          </BrowserRouter>
+        </ProjectProvider>
       </SocketProvider>
     </AuthProvider>
   )

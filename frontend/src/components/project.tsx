@@ -8,6 +8,11 @@ import { XTerminal } from "./terminal"
 import { FileTree } from "./filetree"
 import { useEffect, useState } from "react"
 import { useSocketContext } from "@/context/SocketContext"
+import { EditorActions } from "./editor-actions"
+import axios from "axios"
+import Cookies from "js-cookie"
+import { useToast } from "@/hooks/use-toast"
+import { useProject } from "@/context/ProjectContext"
 
 
 type Node = {
@@ -21,6 +26,11 @@ export default function Project() {
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [fileContent, setFileContent] = useState<string>("");
     const [language, setLanguage] = useState<string>("");
+    const user = Cookies.get('user');
+    const { projectName } = useProject();
+    const { toast } = useToast();
+
+    console.log('Project name:', projectName);
 
     const handleFileClick = async (node: Node) => {
         if (!node.nodes) {
@@ -72,6 +82,45 @@ export default function Project() {
         }
     }
 
+    const handleRun = () => {
+
+    }
+
+    const handleSave = async () => {
+        try {
+            toast({
+                title: "Saving file",
+            })
+
+            const response = await axios.post(`http://localhost:3001/api/projects/saveFile`,{
+                user : user,
+                project: projectName,
+            },{
+                withCredentials: true,
+            });
+
+            if(response.status === 200){
+                toast({
+                    title: "Success",
+                    description: "Project saved successfully",
+                })
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save file",
+                variant: "destructive"
+            })
+            console.log('Error saving file:', error);
+        }
+    }
+
+    const handleExit = () => {
+        if (window.confirm("Are you sure you want to exit?")) {
+            window.close();
+        }
+    }
+
     useEffect(() => {
         if (socket) {
             socket.emit('files:rw');
@@ -87,14 +136,14 @@ export default function Project() {
 
             setTimeout(() => {
                 socket.emit('files:write', { filename: selectedFile, content: fileContent });
-            },2000);
+            }, 2000);
 
             return () => {
                 socket.off('files:rw');
                 socket.off('files:error');
             };
         }
-    }, [socket,fileContent,selectedFile]);
+    }, [socket, fileContent, selectedFile]);
 
     return (
         <div className="h-screen w-full overflow-hidden">
@@ -124,6 +173,7 @@ export default function Project() {
                             minSize={50}
                             className="h-full border-b relative"
                         >
+                            <EditorActions onRun={handleRun} onSave={handleSave} onExit={handleExit} />
                             <CodeEditor fileContent={fileContent} language={language} onChange={(updatedContent: any) => setFileContent(updatedContent)} />
                         </ResizablePanel>
                         <ResizableHandle withHandle className="bg-muted data-[hover]:bg-muted/70" />

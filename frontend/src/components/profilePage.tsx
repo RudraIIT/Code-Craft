@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -45,26 +45,27 @@ export default function ProfilePage() {
     const navigate = useNavigate();
     const user = Cookies.get('user')
 
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                toast({
-                    title: 'Fetching projects'
-                })
-                const response = await axios.get(`http://localhost:3001/api/projects/userProjects/${user}`, {
-                    withCredentials: true,
-                })
-                setTasks(response.data)
-                toast({
-                    title: 'Success',
-                    description: 'Projects fetched successfully'
-                })
-            } catch (error) {
-                console.log(error)
-            }
+    const fetchTasks = useCallback(async () => {
+        try {
+            toast({
+                title: 'Fetching projects'
+            })
+            const response = await axios.get(`http://localhost:3001/api/projects/userProjects/${user}`, {
+                withCredentials: true,
+            })
+            setTasks(response.data)
+            toast({
+                title: 'Success',
+                description: 'Projects fetched successfully'
+            })
+        } catch (error) {
+            console.log(error)
         }
+    },[user])
+
+    useEffect(() => {
         fetchTasks()
-    }, [])
+    }, [fetchTasks])
 
     const handleNewProject = () => {
         toast({
