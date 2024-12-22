@@ -148,7 +148,6 @@ io.on("connection", (socket) => {
     }));
     socket.on('file:read', (_a) => __awaiter(void 0, [_a], void 0, function* ({ fileName }) {
         try {
-            console.log('Reading file: ', fileName);
             const filePath = path_1.default.join(workspacePath, fileName);
             if (!fs_1.default.existsSync(filePath)) {
                 console.log('File does not exist: ', filePath);

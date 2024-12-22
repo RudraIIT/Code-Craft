@@ -7,16 +7,18 @@ import { SignInForm } from './components/signIn'
 import { Dashboard } from './components/dashboard'
 import Project from './components/project'
 import { Toaster } from './components/ui/toaster'
+import ProfilePage from './components/profilePage'
 
 function AppRoutes () {
   const {user} = useAuth();
 
   return (
     <Routes>
-      <Route path="/signup" element={!user ? <SignUpForm /> : <Navigate to="/" />} />
-      <Route path="/signin" element={!user ? <SignInForm /> : <Navigate to="/" />} />
+      <Route path="/signup" element={!user ? <SignUpForm /> : <Navigate to="/profile" />} />
+      <Route path="/signin" element={!user ? <SignInForm /> : <Navigate to="/profile" />} />
       <Route path="/" element={user ? <Dashboard /> : <Navigate to="/signin" />} />
       <Route path="/project" element={user ? <Project /> : <Navigate to="/signin" />} />
+      <Route path='/profile' element={user ? <ProfilePage /> : <Navigate to="/signin" />} />
     </Routes>
   )
 }

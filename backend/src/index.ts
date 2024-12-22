@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import userRoutes from './routes/userRoute';
+import projectRoutes from './routes/projectRoute';
 import { app,server } from './socketIO';
 
 dotenv.config();
@@ -20,6 +21,7 @@ const corsOptions ={
 app.use(cors(corsOptions));
 
 app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
 
 const PORT = process.env.PORT || 3000; 
 server.listen(3001, () => {
