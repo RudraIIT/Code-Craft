@@ -22,6 +22,7 @@ import { MoreHorizontal, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight 
 import { useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
+import { TripleButton } from './tripleButton'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 
@@ -102,14 +103,14 @@ export default function ProfilePage() {
                         Create Project
                     </Button>
                 </div>
-                <div className="flex items-center gap-4">
+                {/* <div className="flex items-center gap-4">
                     <Button variant="ghost" className="text-muted-foreground">
                         Status
                     </Button>
                     <Button variant="ghost" className="text-muted-foreground">
                         Priority
                     </Button>
-                </div>
+                </div> */}
             </div>
 
             <Table>
@@ -168,9 +169,9 @@ export default function ProfilePage() {
                                 </div>
                             </TableCell>
                             <TableCell>
-                                <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
+                                <div>
+                                    <TripleButton name={task.title} username={user} />
+                                </div>
                             </TableCell>
                         </TableRow>
                     ))}

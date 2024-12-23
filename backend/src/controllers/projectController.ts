@@ -3,6 +3,29 @@ import { Request, Response } from "express";
 import fs from 'fs';
 import path from "path";
 
+const copyDirectory = (source: string, destination: string) => {
+    if (!fs.existsSync(source)) {
+        throw new Error('Source directory does not exist');
+    }
+
+    const entries = fs.readdirSync(source, { withFileTypes: true });
+
+    entries.forEach((entry) => {
+        const sourcePath = path.join(source, entry.name);
+        const destinationPath = path.join(destination, entry.name);
+
+        if (entry.isDirectory()) {
+            if (!fs.existsSync(destinationPath)) {
+                fs.mkdirSync(destinationPath, { recursive: true });
+            }
+
+            copyDirectory(sourcePath, destinationPath);
+        } else {
+            fs.copyFileSync(sourcePath, destinationPath);
+        }
+    });
+};
+
 const getProjects = async (req: Request, res: Response): Promise<void> => {
     try {
         const email = req.params.email;
@@ -50,29 +73,6 @@ const saveProject = async (req: Request, res: Response): Promise<void> => {
             fs.mkdirSync(savedPath, { recursive: true });
         }
 
-        const copyDirectory = (source: string, destination: string) => {
-            if (!fs.existsSync(source)) {
-                throw new Error('Source directory does not exist');
-            }
-
-            const entries = fs.readdirSync(source, { withFileTypes: true });
-
-            entries.forEach((entry) => {
-                const sourcePath = path.join(source, entry.name);
-                const destinationPath = path.join(destination, entry.name);
-
-                if (entry.isDirectory()) {
-                    if (!fs.existsSync(destinationPath)) {
-                        fs.mkdirSync(destinationPath, { recursive: true });
-                    }
-
-                    copyDirectory(sourcePath, destinationPath);
-                } else {
-                    fs.copyFileSync(sourcePath, destinationPath);
-                }
-            });
-        };
-
         copyDirectory(workspace, savedPath);
 
         const userId = await prisma.users.findUnique({
@@ -103,4 +103,31 @@ const saveProject = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-export { getProjects,saveProject };
+const launchProject = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { user, project } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+        const projectPath = `/home/rudra/Desktop/SavedProjects/${user}/${project}`;
+
+        console.log('Workspace Path:', workspace);
+        console.log('Project Path:', projectPath);
+
+        if (!fs.existsSync(projectPath)) {
+            res.status(400).json({ error: 'Project path does not exist' });
+            return ;
+        }
+
+        if (!fs.existsSync(workspace)) {
+            fs.mkdirSync(workspace, { recursive: true });
+        }
+
+        copyDirectory(projectPath, workspace);
+
+        res.status(200).json({ message: 'Project launched successfully' });
+    } catch (error: any) {
+        console.error('Error launching project:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+};
+
+export { getProjects,saveProject, launchProject };

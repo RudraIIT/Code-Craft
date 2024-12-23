@@ -81,9 +81,15 @@ io.on("connection", (socket) => {
     socket.on('files:rw', () => {
         sendUpatedFiles();
     });
-    watcher.on('all', (event, path) => __awaiter(void 0, void 0, void 0, function* () {
-        yield sendUpatedFiles();
-    }));
+    const debounce = (func, delay) => {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => func(...args), delay);
+        };
+    };
+    const sendUpdatedFilesDebounced = debounce(sendUpatedFiles, 200);
+    watcher.on('all', sendUpdatedFilesDebounced);
     socket.on('newcontainer', () => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const images = yield docker.listImages();

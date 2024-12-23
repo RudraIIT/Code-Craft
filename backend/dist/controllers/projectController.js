@@ -12,10 +12,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveProject = exports.getProjects = void 0;
+exports.launchProject = exports.saveProject = exports.getProjects = void 0;
 const db_1 = __importDefault(require("../db"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const copyDirectory = (source, destination) => {
+    if (!fs_1.default.existsSync(source)) {
+        throw new Error('Source directory does not exist');
+    }
+    const entries = fs_1.default.readdirSync(source, { withFileTypes: true });
+    entries.forEach((entry) => {
+        const sourcePath = path_1.default.join(source, entry.name);
+        const destinationPath = path_1.default.join(destination, entry.name);
+        if (entry.isDirectory()) {
+            if (!fs_1.default.existsSync(destinationPath)) {
+                fs_1.default.mkdirSync(destinationPath, { recursive: true });
+            }
+            copyDirectory(sourcePath, destinationPath);
+        }
+        else {
+            fs_1.default.copyFileSync(sourcePath, destinationPath);
+        }
+    });
+};
 const getProjects = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const email = req.params.email;
@@ -56,25 +75,6 @@ const saveProject = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!fs_1.default.existsSync(savedPath)) {
             fs_1.default.mkdirSync(savedPath, { recursive: true });
         }
-        const copyDirectory = (source, destination) => {
-            if (!fs_1.default.existsSync(source)) {
-                throw new Error('Source directory does not exist');
-            }
-            const entries = fs_1.default.readdirSync(source, { withFileTypes: true });
-            entries.forEach((entry) => {
-                const sourcePath = path_1.default.join(source, entry.name);
-                const destinationPath = path_1.default.join(destination, entry.name);
-                if (entry.isDirectory()) {
-                    if (!fs_1.default.existsSync(destinationPath)) {
-                        fs_1.default.mkdirSync(destinationPath, { recursive: true });
-                    }
-                    copyDirectory(sourcePath, destinationPath);
-                }
-                else {
-                    fs_1.default.copyFileSync(sourcePath, destinationPath);
-                }
-            });
-        };
         copyDirectory(workspace, savedPath);
         const userId = yield db_1.default.users.findUnique({
             where: { email: user },
@@ -100,3 +100,26 @@ const saveProject = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.saveProject = saveProject;
+const launchProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { user, project } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+        const projectPath = `/home/rudra/Desktop/SavedProjects/${user}/${project}`;
+        console.log('Workspace Path:', workspace);
+        console.log('Project Path:', projectPath);
+        if (!fs_1.default.existsSync(projectPath)) {
+            res.status(400).json({ error: 'Project path does not exist' });
+            return;
+        }
+        if (!fs_1.default.existsSync(workspace)) {
+            fs_1.default.mkdirSync(workspace, { recursive: true });
+        }
+        copyDirectory(projectPath, workspace);
+        res.status(200).json({ message: 'Project launched successfully' });
+    }
+    catch (error) {
+        console.error('Error launching project:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+});
+exports.launchProject = launchProject;

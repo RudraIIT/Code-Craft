@@ -81,9 +81,17 @@ io.on("connection", (socket) => {
         sendUpatedFiles();
     });
 
-    watcher.on('all', async (event, path) => {
-        await sendUpatedFiles();
-    });
+    const debounce = (func:any, delay:number) => {
+        let timer: NodeJS.Timeout;
+        return (...args:any) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => func(...args), delay);
+        };
+    };
+    
+    const sendUpdatedFilesDebounced = debounce(sendUpatedFiles, 200);
+    watcher.on('all', sendUpdatedFilesDebounced);
+    
 
     socket.on('newcontainer', async () => {
         try {
