@@ -8,12 +8,12 @@ const term = new Terminal();
 
 export function XTerminal() {
   const terminalRef = useRef<HTMLDivElement | null>(null);
-  const isRendered = useRef(false);
+  // const isRendered = useRef(false);
   const { socket } = useSocketContext()
 
   useEffect(() => {
-    if (isRendered.current) return;
-    isRendered.current = true;
+    // if (isRendered.current) return;
+    // isRendered.current = true;
 
     const session = Cookies.get('project');
 
