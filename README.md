@@ -9,4 +9,4 @@ A sleek and interactive web-based code editor that supports multiple languages, 
 - **Syntax highlighting**: Easy-to-read code with color-coded syntax.  
 - **Docker integration**: Run and test code in isolated environments.  
 
-![Code Editor](frontend/assets/ss.png)  
+![Code Editor](frontend/src/assets/ss.png)  
