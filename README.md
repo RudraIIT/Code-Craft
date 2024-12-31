@@ -8,3 +8,5 @@ A sleek and interactive web-based code editor that supports multiple languages, 
 - **Real-time collaboration**: Edit and share code with teammates.  
 - **Syntax highlighting**: Easy-to-read code with color-coded syntax.  
 - **Docker integration**: Run and test code in isolated environments.  
+
+![Code Editor](assets/ss.png)  
