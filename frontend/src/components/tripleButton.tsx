@@ -48,7 +48,7 @@ export function TripleButton({name, username}: TripleButtonProps) {
                     })
 
                     if (socket) {
-                        socket.emit('newcontainer')
+                        socket.emit('newcontainer',{framework:""})
                         navigate('/project')
                     }
                 }

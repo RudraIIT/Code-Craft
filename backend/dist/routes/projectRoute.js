@@ -6,4 +6,7 @@ const router = (0, express_1.Router)();
 router.get("/userProjects/:email", projectController_1.getProjects);
 router.post("/saveFile", projectController_1.saveProject);
 router.post("/launchProject", projectController_1.launchProject);
+router.post("/launchReactProject", projectController_1.launchReactProject);
+router.post("/launchCppProject", projectController_1.launchCppProject);
+router.post("/cleanUserDir", projectController_1.cleanUserDir);
 exports.default = router;

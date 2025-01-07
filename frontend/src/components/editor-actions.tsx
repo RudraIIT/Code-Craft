@@ -11,9 +11,10 @@ interface EditorActionsProps {
   onRun?: () => void
   onSave?: () => void
   onExit?: () => void
+  onPreview?: () => void
 }
 
-export function EditorActions({ onRun, onSave, onExit }: EditorActionsProps) {
+export function EditorActions({ onRun, onSave, onExit, onPreview }: EditorActionsProps) {
   return (
     <div className="absolute right-4 top-4 z-50">
       <DropdownMenu>
@@ -31,6 +32,10 @@ export function EditorActions({ onRun, onSave, onExit }: EditorActionsProps) {
           <DropdownMenuItem onClick={onSave}>
             <Save className="mr-2 h-4 w-4" />
             Save
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onPreview}>
+            <Save className="mr-2 h-4 w-4" />
+            Preview
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onExit}>
             <X className="mr-2 h-4 w-4" />

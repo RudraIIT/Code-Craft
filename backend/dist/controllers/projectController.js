@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.launchProject = exports.saveProject = exports.getProjects = void 0;
+exports.cleanUserDir = exports.launchCppProject = exports.launchReactProject = exports.launchProject = exports.saveProject = exports.getProjects = void 0;
 const db_1 = __importDefault(require("../db"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
@@ -123,3 +123,65 @@ const launchProject = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.launchProject = launchProject;
+const launchReactProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { user } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+        const projectPath = `/home/rudra/Desktop/Dockerimg/my-app`;
+        console.log('Workspace Path:', workspace);
+        console.log('Project Path:', projectPath);
+        if (!fs_1.default.existsSync(projectPath)) {
+            res.status(400).json({ error: 'Project path does not exist' });
+            return;
+        }
+        if (!fs_1.default.existsSync(workspace)) {
+            fs_1.default.mkdirSync(workspace, { recursive: true });
+        }
+        copyDirectory(projectPath, workspace);
+        res.status(200).json({ message: 'Project launched successfully' });
+    }
+    catch (error) {
+        console.error('Error launching project:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+});
+exports.launchReactProject = launchReactProject;
+const launchCppProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        console.log('Request body:', req.body);
+        const { user } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+        const projectPath = `/home/rudra/Desktop/Dockerimg/cpp`;
+        console.log('Workspace Path:', workspace);
+        console.log('Project Path:', projectPath);
+        if (!fs_1.default.existsSync(projectPath)) {
+            res.status(400).json({ error: 'Project path does not exist' });
+            return;
+        }
+        if (!fs_1.default.existsSync(workspace)) {
+            fs_1.default.mkdirSync(workspace, { recursive: true });
+        }
+        copyDirectory(projectPath, workspace);
+        res.status(200).json({ message: 'Project launched successfully' });
+    }
+    catch (error) {
+        console.error('Error launching project:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+});
+exports.launchCppProject = launchCppProject;
+const cleanUserDir = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { user } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+        if (fs_1.default.existsSync(workspace)) {
+            fs_1.default.rmdirSync(workspace, { recursive: true });
+        }
+        res.status(200).json({ message: 'User directory cleaned successfully' });
+    }
+    catch (error) {
+        console.error('Error cleaning user directory:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+});
+exports.cleanUserDir = cleanUserDir;

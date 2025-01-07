@@ -41,6 +41,8 @@ let containerCount = 0;
 const clientContainers = {};
 const users = {};
 const activeUsers = {};
+const frameworkToImageMap = { 'node': 'node:latest', 'cpp': 'cpp-app:latest', 'react.js': 'my-app-app:latest' };
+const userToFrameworkMap = {};
 const sendFiles = (pathToRead) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const dir = yield fs_1.default.promises.readdir(pathToRead);
@@ -90,14 +92,17 @@ io.on("connection", (socket) => {
     };
     const sendUpdatedFilesDebounced = debounce(sendUpatedFiles, 200);
     watcher.on('all', sendUpdatedFilesDebounced);
-    socket.on('newcontainer', () => __awaiter(void 0, void 0, void 0, function* () {
+    socket.on('newcontainer', (_a) => __awaiter(void 0, [_a], void 0, function* ({ framework }) {
         try {
+            const image = framework === "" ? `ubuntu:latest` : frameworkToImageMap[framework];
+            userToFrameworkMap[userId] = frameworkToImageMap[framework];
+            console.log('Image: ', image);
             const images = yield docker.listImages();
-            const ubuntuImage = images.find((image) => image.RepoTags && image.RepoTags.includes('ubuntu:latest'));
+            const ubuntuImage = images.find((img) => img.RepoTags && img.RepoTags.includes(image));
             if (!ubuntuImage) {
                 console.log('Pulling ubuntu image');
                 yield new Promise((resolve, reject) => {
-                    docker.pull('ubuntu:latest', (err, stream) => {
+                    docker.pull(image, (err, stream) => {
                         if (err) {
                             reject(err);
                             return;
@@ -107,7 +112,7 @@ io.on("connection", (socket) => {
                 });
             }
             const container = yield docker.createContainer({
-                Image: 'ubuntu:latest',
+                Image: image,
                 name: `${socket.id}-${++containerCount}`,
                 Tty: true,
                 Cmd: ['/bin/bash'],
@@ -116,6 +121,9 @@ io.on("connection", (socket) => {
                 HostConfig: {
                     Binds: ['/home/rudra/Desktop/Container:/workspace'],
                     NetworkMode: 'bridge',
+                    PortBindings: {
+                        "3000/tcp": [{ "HostPort": "8080" }],
+                    }
                 },
                 WorkingDir: `/workspace/${userId}`,
             });
@@ -183,21 +191,21 @@ io.on("connection", (socket) => {
             console.error('Error writing file: ', error);
         }
     }));
-    socket.on('disconnect', () => __awaiter(void 0, void 0, void 0, function* () {
-        console.log('Disconnecting container: ', socket.id);
-        activeUsers[userId] = setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
-            try {
-                if (clientContainers[userId]) {
-                    yield clientContainers[userId].stop();
-                    yield clientContainers[userId].remove();
-                    delete clientContainers[userId];
-                }
-            }
-            catch (error) {
-                console.error('Error stopping container: ', error);
-            }
-        }), 30000);
-    }));
+    // socket.on('disconnect', async () => {
+    //     console.log('Disconnecting container: ', socket.id)
+    //     activeUsers[userId] = setTimeout(async () => {
+    //         try {
+    //             if (clientContainers[userId]) {
+    //                 await clientContainers[userId].stop();
+    //                 await clientContainers[userId].remove();
+    //                 delete clientContainers[userId];
+    //             }
+    //         } catch (error) {
+    //             console.error('Error stopping container: ', error);
+    //         }
+    //     }, 30000);
+    // })
+    // 
     socket.on('reconnect', () => __awaiter(void 0, void 0, void 0, function* () {
         console.log('Reconnecting container: ', socket.id);
         if (activeUsers[userId]) {
@@ -207,7 +215,7 @@ io.on("connection", (socket) => {
         if (!clientContainers[userId]) {
             console.log(`Creating new container for user: ${userId}`);
             const container = yield docker.createContainer({
-                Image: 'ubuntu:latest',
+                Image: `${userToFrameworkMap[userId]}`,
                 name: `${socket.id}-${++containerCount}`,
                 Tty: true,
                 Cmd: ['/bin/bash'],

@@ -130,4 +130,76 @@ const launchProject = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-export { getProjects,saveProject, launchProject };
+const launchReactProject = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { user } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+        const projectPath = `/home/rudra/Desktop/Dockerimg/my-app`;
+
+        console.log('Workspace Path:', workspace);
+        console.log('Project Path:', projectPath);
+
+        if (!fs.existsSync(projectPath)) {
+            res.status(400).json({ error: 'Project path does not exist' });
+            return ;
+        }
+
+        if (!fs.existsSync(workspace)) {
+            fs.mkdirSync(workspace, { recursive: true });
+        }
+
+        copyDirectory(projectPath, workspace);
+
+        res.status(200).json({ message: 'Project launched successfully' });
+    } catch (error: any) {
+        console.error('Error launching project:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+}
+
+const launchCppProject = async (req: Request, res: Response): Promise<void> => {
+    try {
+        console.log('Request body:', req.body);
+        const { user } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+        const projectPath = `/home/rudra/Desktop/Dockerimg/cpp`;
+
+        console.log('Workspace Path:', workspace);
+        console.log('Project Path:', projectPath);
+
+        if (!fs.existsSync(projectPath)) {
+            res.status(400).json({ error: 'Project path does not exist' });
+            return ;
+        }
+
+        if (!fs.existsSync(workspace)) {
+            fs.mkdirSync(workspace, { recursive: true });
+        }
+
+        copyDirectory(projectPath, workspace);
+
+        res.status(200).json({ message: 'Project launched successfully' });
+    } catch (error: any) {
+        console.error('Error launching project:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+}
+
+const cleanUserDir = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { user } = req.body;
+        const workspace = `/home/rudra/Desktop/Container/${user}`;
+
+        if (fs.existsSync(workspace)) {
+            fs.rmdirSync(workspace, { recursive: true });
+        }
+
+        res.status(200).json({ message: 'User directory cleaned successfully' });
+    } catch (error: any) {
+        console.error('Error cleaning user directory:', error.message, error.stack);
+        res.status(500).json({ error: 'Server Error' });
+    }
+}
+    
+
+export { getProjects,saveProject, launchProject, launchReactProject, launchCppProject,cleanUserDir };

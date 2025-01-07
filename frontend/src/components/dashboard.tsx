@@ -21,6 +21,8 @@ import { useNavigate } from "react-router-dom"
 import { useSocketContext } from "../context/SocketContext"
 import { useToast } from "@/hooks/use-toast"
 import { useProject } from "@/context/ProjectContext"
+import axios from "axios"
+import Cookies from "js-cookie"
 
 export function Dashboard() {
     const { socket } = useSocketContext();
@@ -30,8 +32,65 @@ export function Dashboard() {
     const navigate = useNavigate()
     const { toast } = useToast();
     const { setProject } = useProject();
+    const user = Cookies.get('user');
 
-    const handleSubmit = () => {
+    const launchReactProject = async ()=> {
+        try {
+            toast({
+                title: "Launching project",
+                description: "Please wait"
+            })
+
+            const response = await axios.post('http://localhost:3001/api/projects/launchReactProject',{
+                user: user,
+            }, {
+                withCredentials: true
+            })
+
+            if(response.status === 200){
+                toast({
+                    title: "Success",
+                    description: "React Project launched successfully"
+                })
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Error launching project",
+                variant: "destructive"
+            })
+        }
+    }
+
+    const launchCppProject = async () => {
+        try {
+            toast({
+                title: "Launching project",
+                description: "Please wait"
+            })
+
+            const response = await axios.post('http://localhost:3001/api/projects/launchCppProject',{
+                user: user,
+            }, {
+                withCredentials: true
+            })
+
+            if(response.status === 200){
+                toast({
+                    title: "Success",
+                    description: "C++ Project launched successfully"
+                })
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Error launching project",
+                variant: "destructive"
+            })
+        }
+    }
+
+    const handleSubmit = async () => {
         if (!projectName) {
             toast({
                 title: "Project name is required",
@@ -53,9 +112,15 @@ export function Dashboard() {
         setProject(projectName)
 
         if (socket) {
+            if(framework === "react.js") {
+                await launchReactProject()
+            } else if(framework === "cpp") {
+                await launchCppProject()
+            }
+
             setClicked(!clicked)
             if (!clicked) {
-                socket.emit('newcontainer')
+                socket.emit('newcontainer',{framework})
                 navigate('/project')
             } else {
                 socket.off('newcontainer')

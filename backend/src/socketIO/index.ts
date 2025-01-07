@@ -35,6 +35,9 @@ const clientContainers: { [key: string]: Docker.Container } = {};
 const users: { [key: string]: any } = {}
 const activeUsers: { [key: string]: NodeJS.Timeout } = {}
 
+const frameworkToImageMap: { [key: string]: string } = {'node': 'node:latest', 'cpp': 'cpp-app:latest', 'react.js': 'my-app-app:latest'}
+const userToFrameworkMap: { [key: string]: string } = {}
+
 const sendFiles = async (pathToRead: string): Promise<Node[]> => {
     try {
         const dir = await fs.promises.readdir(pathToRead);
@@ -93,17 +96,20 @@ io.on("connection", (socket) => {
     watcher.on('all', sendUpdatedFilesDebounced);
     
 
-    socket.on('newcontainer', async () => {
+    socket.on('newcontainer', async ({framework}) => {
         try {
+            const image = framework === "" ? `ubuntu:latest`  : frameworkToImageMap[framework];
+            userToFrameworkMap[userId] = frameworkToImageMap[framework];
+            console.log('Image: ', image);
             const images = await docker.listImages();
             const ubuntuImage = images.find(
-                (image) => image.RepoTags && image.RepoTags.includes('ubuntu:latest')
+                (img) => img.RepoTags && img.RepoTags.includes(image)
             )
 
             if (!ubuntuImage) {
                 console.log('Pulling ubuntu image')
                 await new Promise((resolve, reject) => {
-                    docker.pull('ubuntu:latest', (err: any, stream: any) => {
+                    docker.pull(image, (err: any, stream: any) => {
                         if (err) {
                             reject(err);
                             return;
@@ -115,7 +121,7 @@ io.on("connection", (socket) => {
             }
 
             const container = await docker.createContainer({
-                Image: 'ubuntu:latest',
+                Image: image,
                 name: `${socket.id}-${++containerCount}`,
                 Tty: true,
                 Cmd: ['/bin/bash'],
@@ -124,6 +130,9 @@ io.on("connection", (socket) => {
                 HostConfig: {
                     Binds: ['/home/rudra/Desktop/Container:/workspace'],
                     NetworkMode: 'bridge',
+                    PortBindings : {
+                        "3000/tcp": [{ "HostPort": "8080" }],
+                    }
                 },
                 WorkingDir: `/workspace/${userId}`,
             })
@@ -205,21 +214,21 @@ io.on("connection", (socket) => {
         }
     })
 
-    socket.on('disconnect', async () => {
-        console.log('Disconnecting container: ', socket.id)
-        activeUsers[userId] = setTimeout(async () => {
-            try {
-                if (clientContainers[userId]) {
-                    await clientContainers[userId].stop();
-                    await clientContainers[userId].remove();
-                    delete clientContainers[userId];
-                }
-            } catch (error) {
-                console.error('Error stopping container: ', error);
-            }
-        }, 30000);
-    })
-
+    // socket.on('disconnect', async () => {
+    //     console.log('Disconnecting container: ', socket.id)
+    //     activeUsers[userId] = setTimeout(async () => {
+    //         try {
+    //             if (clientContainers[userId]) {
+    //                 await clientContainers[userId].stop();
+    //                 await clientContainers[userId].remove();
+    //                 delete clientContainers[userId];
+    //             }
+    //         } catch (error) {
+    //             console.error('Error stopping container: ', error);
+    //         }
+    //     }, 30000);
+    // })
+    // 
     socket.on('reconnect', async () => {
         console.log('Reconnecting container: ', socket.id)
         if (activeUsers[userId]) {
@@ -230,7 +239,7 @@ io.on("connection", (socket) => {
         if (!clientContainers[userId]) {
             console.log(`Creating new container for user: ${userId}`);
             const container = await docker.createContainer({
-                Image: 'ubuntu:latest',
+                Image: `${userToFrameworkMap[userId]}`,
                 name: `${socket.id}-${++containerCount}`,
                 Tty: true,
                 Cmd: ['/bin/bash'],

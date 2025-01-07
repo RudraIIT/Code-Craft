@@ -3,6 +3,7 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "./editor"
 import { XTerminal } from "./terminal"
 import { FileTree } from "./filetree"
@@ -13,6 +14,8 @@ import axios from "axios"
 import Cookies from "js-cookie"
 import { useToast } from "@/hooks/use-toast"
 import { useProject } from "@/context/ProjectContext"
+import Iframe from 'react-iframe'
+import { useNavigate } from "react-router-dom"
 
 
 type Node = {
@@ -29,8 +32,14 @@ export default function Project() {
     const user = Cookies.get('user');
     const { projectName } = useProject();
     const { toast } = useToast();
+    const [preview, setPreview] = useState(false);
+    const navigate = useNavigate();
 
     console.log('Project name:', projectName);
+
+    const handlePreview = () => {
+        setPreview(!preview);
+    }
 
     const handleFileClick = async (node: Node) => {
         if (!node.nodes) {
@@ -92,14 +101,14 @@ export default function Project() {
                 title: "Saving file",
             })
 
-            const response = await axios.post(`http://localhost:3001/api/projects/saveFile`,{
-                user : user,
+            const response = await axios.post(`http://localhost:3001/api/projects/saveFile`, {
+                user: user,
                 project: projectName,
-            },{
+            }, {
                 withCredentials: true,
             });
 
-            if(response.status === 200){
+            if (response.status === 200) {
                 toast({
                     title: "Success",
                     description: "Project saved successfully",
@@ -115,9 +124,25 @@ export default function Project() {
         }
     }
 
-    const handleExit = () => {
+    const handleExit = async () => {
         if (window.confirm("Are you sure you want to exit?")) {
-            window.close();
+            try {
+                if(socket) {
+                    socket.close();
+                }
+
+                const response = await axios.post(`http://localhost:3001/api/projects/cleanUserDir`, {
+                    user: user,
+                }, {
+                    withCredentials: true,
+                });
+    
+                if(response.status === 200) {
+                    window.location.href = 'http://localhost:5173/profile';
+                }
+            } catch (error) {
+                console.log('Error cleaning user directory:', error);
+            }
         }
     }
 
@@ -135,7 +160,9 @@ export default function Project() {
             });
 
             setTimeout(() => {
-                socket.emit('files:write', { filename: selectedFile, content: fileContent });
+                if (selectedFile) {
+                    socket.emit('files:write', { filename: fullFilePath(selectedFile, nodes), content: fileContent });
+                }
             }, 2000);
 
             return () => {
@@ -173,12 +200,54 @@ export default function Project() {
                             minSize={50}
                             className="h-full border-b relative"
                         >
-                            <EditorActions onRun={handleRun} onSave={handleSave} onExit={handleExit} />
-                            <CodeEditor fileContent={fileContent} language={language} onChange={(updatedContent: any) => setFileContent(updatedContent)} />
+                            <EditorActions onRun={handleRun} onPreview={handlePreview} onSave={handleSave} onExit={handleExit} />
+                            {/* {preview ? (
+                                <Iframe
+                                    url="http://localhost:8080/"
+                                    width="100%"
+                                    height="100%"
+                                    id="myId"
+                                    className="h-full w-full"
+                                    display="initial"
+                                    position="relative"
+                                />
+                            ) : (
+                                <CodeEditor
+                                    fileContent={fileContent}
+                                    language={language}
+                                    onChange={(updatedContent: any) => setFileContent(updatedContent)}
+                                />
+                            )} */}
+
+                            <Tabs defaultValue="editor" className="h-full w-full bg-black">
+                                <TabsList className="h-10 flex items-center gap-4 bg-black">
+                                    <TabsTrigger value="editor">Editor</TabsTrigger>
+                                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="editor" className="h-full w-full">
+                                    <CodeEditor
+                                        fileContent={fileContent}
+                                        language={language}
+                                        onChange={(updatedContent: any) => setFileContent(updatedContent)}
+                                    />
+                                </TabsContent>
+                                <TabsContent value="preview" className="h-full w-full">
+                                    <Iframe
+                                        url="http://localhost:8080/"
+                                        width="100%"
+                                        height="100%"
+                                        id="myId"
+                                        className="h-full w-full"
+                                        display="initial"
+                                        position="relative"
+                                    />
+                                </TabsContent>
+                            </Tabs>       
+
                         </ResizablePanel>
                         <ResizableHandle withHandle className="bg-muted data-[hover]:bg-muted/70" />
                         {/* Terminal Panel */}
-                        <ResizablePanel defaultSize={30} minSize={20} className="h-full relative">
+                        <ResizablePanel defaultSize={30} minSize={20} className="h-full relative overflow-y-scroll">
                             <XTerminal />
                         </ResizablePanel>
                     </ResizablePanelGroup>

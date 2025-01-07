@@ -28,14 +28,14 @@ export function XTerminal() {
       Cookies.set('project', 'project1');
     }
 
-    const reconnectInterval = setInterval(() => {
-      console.log('Checking socket status...');
-      console.log('Socket disconnected status:', socket?.disconnected);
-      if (!socket || socket.disconnected) {
-        console.log('Attempting to reconnect...');
-        socket?.emit('reconnect');
-      }
-    }, 5000);
+    // const reconnectInterval = setInterval(() => {
+    //   console.log('Checking socket status...');
+    //   console.log('Socket disconnected status:', socket?.disconnected);
+    //   if (!socket || socket.disconnected) {
+    //     console.log('Attempting to reconnect...');
+    //     socket?.emit('reconnect');
+    //   }
+    // }, 5000);
 
     if (terminalRef.current) {
       term.open(terminalRef.current);
@@ -54,7 +54,7 @@ export function XTerminal() {
       }
 
       return () => {
-        clearInterval(reconnectInterval);
+        // clearInterval(reconnectInterval);
         if (socket) {
           socket.emit("disconnect");
           socket.off("terminal:data", onTerminalData)
