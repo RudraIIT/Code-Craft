@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useProject } from "@/context/ProjectContext"
 import axios from "axios"
 import Cookies from "js-cookie"
+import TransitionPage from "@/components/transition-page"
 
 export function Dashboard() {
     const { socket } = useSocketContext();
@@ -32,8 +33,20 @@ export function Dashboard() {
     const navigate = useNavigate()
     const { toast } = useToast();
     const { setProject } = useProject();
+    const [loading, setLoading] = useState(false)
     const user = Cookies.get('user');
-
+    const frameworkToMessageMap = {
+        "react.js": "Please write npm install and npm run dev to start the project",
+        "node": "Please write npm install and npm run dev to start the project",
+        "cpp": "Please write g++ main.cpp -o main and ./main to start the project",
+    } as const;
+    
+    const message =
+        framework in frameworkToMessageMap
+            ? frameworkToMessageMap[framework as keyof typeof frameworkToMessageMap]
+            : "Invalid framework selected. Please check your configuration.";
+    
+    
     const launchReactProject = async ()=> {
         try {
             toast({
@@ -108,7 +121,8 @@ export function Dashboard() {
             })
             return;
         }
-
+        
+        setLoading(true)
         setProject(projectName)
 
         if (socket) {
@@ -121,16 +135,18 @@ export function Dashboard() {
             setClicked(!clicked)
             if (!clicked) {
                 socket.emit('newcontainer',{framework})
-                navigate('/project')
             } else {
                 socket.off('newcontainer')
             }
         }
     }
 
-    return (
-
-        <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
+    return ( 
+        <>
+            {loading ? (
+            <TransitionPage message={message} duration={3000} onComplete={() => window.location.href = 'http://localhost:5173/project'}/>
+        ) : (
+            <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
             <Card className="w-[500px]">
                 <CardHeader>
                     <CardTitle>Create project</CardTitle>
@@ -165,6 +181,9 @@ export function Dashboard() {
                 </CardFooter>
             </Card>
         </div>
-    )
+        )}
+
+        </>
+                )
 }
 

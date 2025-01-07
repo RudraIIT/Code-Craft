@@ -263,9 +263,9 @@ io.on("connection", (socket) => {
     socket.on('run', ({ filename }) => {
         const container = clientContainers[userId];
         const framework = userToFrameworkMap[userId];
-        console.log('Framework:', framework);
+        // console.log('Framework:', framework);
         if (framework === 'cpp-app:latest') {
-            console.log('Compiling file:', filename);
+            // console.log('Compiling file:', filename);
             container.exec({ Cmd: ['g++', filename, '-o', 'output'] }, (err, exec) => {
                 if (err) {
                     console.error('Error compiling file:', err);
