@@ -15,7 +15,6 @@ import Cookies from "js-cookie"
 import { useToast } from "@/hooks/use-toast"
 import { useProject } from "@/context/ProjectContext"
 import Iframe from 'react-iframe'
-import { useNavigate } from "react-router-dom"
 
 
 type Node = {
@@ -33,7 +32,6 @@ export default function Project() {
     const { projectName } = useProject();
     const { toast } = useToast();
     const [preview, setPreview] = useState(false);
-    const navigate = useNavigate();
 
     console.log('Project name:', projectName);
 
@@ -91,8 +89,12 @@ export default function Project() {
         }
     }
 
-    const handleRun = () => {
-
+    const handleRun = async () => {
+        const fileName = fullFilePath(selectedFile!, nodes);
+        if(socket) {
+            console.log('Running file:', fileName);
+            socket.emit('run', { filename:fileName });
+        }
     }
 
     const handleSave = async () => {
