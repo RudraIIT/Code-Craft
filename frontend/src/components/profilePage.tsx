@@ -46,6 +46,7 @@ export default function ProfilePage() {
     const [currentTaskWindow, setCurrentTaskWindow] = React.useState<Task[]>([])
     const [currentPage, setCurrentPage] = React.useState(1)
     const [rowsPerPage, setRowsPerPage] = React.useState("10")
+    const [search, setSearch] = React.useState("")
     const { toast } = useToast()
     const navigate = useNavigate()
     const user = Cookies.get('user')
@@ -122,6 +123,25 @@ export default function ProfilePage() {
         setCurrentPage((prev) => Math.max(prev - 1, 1))
     }
 
+    const handleSearch = useCallback(() => {
+        const filteredTasks = tasks.filter(task =>
+            task.title.toLowerCase().includes(search.toLowerCase())
+        );
+        setCurrentPage(1);
+        setCurrentTaskWindow(filteredTasks.slice(0, parseInt(rowsPerPage, 10)));
+    }, [tasks, search, rowsPerPage]);
+    
+
+    useEffect(() => {
+        if (search === '') {
+            setCurrentPage(1);
+            setCurrentTaskWindow(tasks.slice(0, parseInt(rowsPerPage, 10)));
+        } else {
+            handleSearch();
+        }
+    }, [search, tasks, rowsPerPage]); 
+    
+
     return (
         <div className="min-h-screen p-6 space-y-6 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
             <div className="flex justify-between items-center">
@@ -139,6 +159,10 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-4">
                     <Input
                         placeholder="Filter projects..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        onKeyUp={(e) => e.key === 'Enter' && handleSearch()}
+                        onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
                         className="max-w-xs bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                     />
                     <Button onClick={handleNewProject} className="bg-blue-600 hover:bg-blue-700 text-white">
