@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast"
 import { useSocketContext } from "@/context/SocketContext"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
+import Cookies from "js-cookie"
 
 interface TripleButtonProps {
     name: string
@@ -24,10 +25,9 @@ interface TripleButtonProps {
 export function TripleButton({name, username}: TripleButtonProps) {
     const {socket} = useSocketContext();
     const navigate = useNavigate();
-
+    
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault()
-        console.log('Form submitted')
         const fetchProject = async () => {
             try {
                 toast({
@@ -42,6 +42,7 @@ export function TripleButton({name, username}: TripleButtonProps) {
                 })
 
                 if (response.status === 200) {
+                    Cookies.set('project', name)
                     toast({
                         title: 'Success',
                         description: 'Project launched successfully'

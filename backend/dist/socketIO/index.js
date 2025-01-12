@@ -81,6 +81,7 @@ io.on("connection", (socket) => {
     });
     sendUpatedFiles();
     socket.on('files:rw', () => {
+        console.log('Sending files to client');
         sendUpatedFiles();
     });
     const debounce = (func, delay) => {
@@ -94,7 +95,7 @@ io.on("connection", (socket) => {
     watcher.on('all', sendUpdatedFilesDebounced);
     socket.on('newcontainer', (_a) => __awaiter(void 0, [_a], void 0, function* ({ framework }) {
         try {
-            const image = framework === "" ? `ubuntu:latest` : frameworkToImageMap[framework];
+            const image = framework === "" || framework === "undefined" ? `ubuntu:latest` : frameworkToImageMap[framework];
             userToFrameworkMap[userId] = frameworkToImageMap[framework];
             console.log('Image: ', image);
             const images = yield docker.listImages();
@@ -214,8 +215,9 @@ io.on("connection", (socket) => {
         }
         if (!clientContainers[userId]) {
             console.log(`Creating new container for user: ${userId}`);
+            const img = userToFrameworkMap[userId] === "undefined" ? "ubuntu:latest" : userToFrameworkMap[userId];
             const container = yield docker.createContainer({
-                Image: `${userToFrameworkMap[userId]}`,
+                Image: img,
                 name: `${socket.id}-${++containerCount}`,
                 Tty: true,
                 Cmd: ['/bin/bash'],
@@ -291,6 +293,29 @@ io.on("connection", (socket) => {
                     });
                 });
             });
+        }
+    });
+    socket.on('files:rename', ({ oldName, newName }) => {
+        const oldPath = path_1.default.join(workspacePath, oldName);
+        const getFolderPath = (filePath) => {
+            const lastSlashIndex = filePath.lastIndexOf('/');
+            return lastSlashIndex !== -1 ? filePath.slice(0, lastSlashIndex) : '';
+        };
+        const pathOfOldFile = getFolderPath(oldName);
+        const newPathBase = path_1.default.join(workspacePath, pathOfOldFile);
+        const newPath = path_1.default.join(newPathBase, newName);
+        if (fs_1.default.existsSync(oldPath)) {
+            fs_1.default.rename(oldPath, newPath, (err) => {
+                if (err) {
+                    console.error('Error renaming file or directory: ', err);
+                    return;
+                }
+                console.log(`Renamed ${oldPath} to ${newPath}`);
+                sendUpatedFiles();
+            });
+        }
+        else {
+            console.error(`Path does not exist: ${oldPath}`);
         }
     });
 });

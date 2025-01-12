@@ -35,7 +35,7 @@ const clientContainers: { [key: string]: Docker.Container } = {};
 const users: { [key: string]: any } = {}
 const activeUsers: { [key: string]: NodeJS.Timeout } = {}
 
-const frameworkToImageMap: { [key: string]: string } = {'node': 'node:latest', 'cpp': 'cpp-app:latest', 'react.js': 'my-app-app:latest'}
+const frameworkToImageMap: { [key: string]: string } = { 'node': 'node:latest', 'cpp': 'cpp-app:latest', 'react.js': 'my-app-app:latest' }
 const userToFrameworkMap: { [key: string]: string } = {}
 
 const sendFiles = async (pathToRead: string): Promise<Node[]> => {
@@ -81,24 +81,25 @@ io.on("connection", (socket) => {
     sendUpatedFiles();
 
     socket.on('files:rw', () => {
+        // console.log('Sending files to client');
         sendUpatedFiles();
     });
 
-    const debounce = (func:any, delay:number) => {
+    const debounce = (func: any, delay: number) => {
         let timer: NodeJS.Timeout;
-        return (...args:any) => {
+        return (...args: any) => {
             clearTimeout(timer);
             timer = setTimeout(() => func(...args), delay);
         };
     };
-    
+
     const sendUpdatedFilesDebounced = debounce(sendUpatedFiles, 200);
     watcher.on('all', sendUpdatedFilesDebounced);
-    
 
-    socket.on('newcontainer', async ({framework}) => {
+
+    socket.on('newcontainer', async ({ framework }) => {
         try {
-            const image = framework === "" ? `ubuntu:latest`  : frameworkToImageMap[framework];
+            const image = framework === "" || framework === "undefined" ? `ubuntu:latest` : frameworkToImageMap[framework];
             userToFrameworkMap[userId] = frameworkToImageMap[framework];
             console.log('Image: ', image);
             const images = await docker.listImages();
@@ -130,7 +131,7 @@ io.on("connection", (socket) => {
                 HostConfig: {
                     Binds: ['/home/rudra/Desktop/Container:/workspace'],
                     NetworkMode: 'bridge',
-                    PortBindings : {
+                    PortBindings: {
                         "3000/tcp": [{ "HostPort": "8080" }],
                     }
                 },
@@ -238,8 +239,9 @@ io.on("connection", (socket) => {
 
         if (!clientContainers[userId]) {
             console.log(`Creating new container for user: ${userId}`);
+            const img = userToFrameworkMap[userId] === "undefined" ? "ubuntu:latest" : userToFrameworkMap[userId];
             const container = await docker.createContainer({
-                Image: `${userToFrameworkMap[userId]}`,
+                Image: img,
                 name: `${socket.id}-${++containerCount}`,
                 Tty: true,
                 Cmd: ['/bin/bash'],
@@ -251,11 +253,11 @@ io.on("connection", (socket) => {
                 },
                 WorkingDir: `/workspace/${userId}`,
             });
-        
+
             await container.start();
             clientContainers[userId] = container;
         }
-        
+
 
         const container = clientContainers[userId];
 
@@ -292,13 +294,13 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on('run', ({filename}) => {
+    socket.on('run', ({ filename }) => {
         const container = clientContainers[userId];
         const framework = userToFrameworkMap[userId];
         // console.log('Framework:', framework);
-        if(framework==='cpp-app:latest'){
+        if (framework === 'cpp-app:latest') {
             // console.log('Compiling file:', filename);
-            container.exec({Cmd: ['g++', filename, '-o', 'output']}, (err, exec) => {
+            container.exec({ Cmd: ['g++', filename, '-o', 'output'] }, (err, exec) => {
                 if (err) {
                     console.error('Error compiling file:', err);
                     return;
@@ -321,9 +323,34 @@ io.on("connection", (socket) => {
                         stream.write(data);
                     });
                 });
-            })   
+            })
         }
     });
+
+    socket.on('files:rename', ({ oldName, newName }) => {
+        const oldPath = path.join(workspacePath, oldName);
+
+        const getFolderPath = (filePath: any) => {
+            const lastSlashIndex = filePath.lastIndexOf('/');
+            return lastSlashIndex !== -1 ? filePath.slice(0, lastSlashIndex) : '';
+        };
+        const pathOfOldFile = getFolderPath(oldName);
+        const newPathBase = path.join(workspacePath, pathOfOldFile);
+        const newPath = path.join(newPathBase, newName);
+
+        if (fs.existsSync(oldPath)) {
+            fs.rename(oldPath, newPath, (err) => {
+                if (err) {
+                    console.error('Error renaming file or directory: ', err);
+                    return;
+                }
+                console.log(`Renamed ${oldPath} to ${newPath}`);
+                sendUpatedFiles();
+            });
+        } else {
+            console.error(`Path does not exist: ${oldPath}`);
+        }
+    })
 });
 
 export { app, io, server };

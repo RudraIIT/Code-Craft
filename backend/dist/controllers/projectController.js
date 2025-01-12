@@ -35,6 +35,27 @@ const copyDirectory = (source, destination) => {
         }
     });
 };
+const updateDirectory = (source, destination) => {
+    if (!fs_1.default.existsSync(source)) {
+        throw new Error('Source directory does not exist');
+    }
+    if (fs_1.default.existsSync(destination)) {
+        fs_1.default.rmSync(destination, { recursive: true, force: true });
+    }
+    fs_1.default.mkdirSync(destination, { recursive: true });
+    const entries = fs_1.default.readdirSync(source, { withFileTypes: true });
+    entries.forEach((entry) => {
+        const sourcePath = path_1.default.join(source, entry.name);
+        const destinationPath = path_1.default.join(destination, entry.name);
+        if (entry.isDirectory()) {
+            fs_1.default.mkdirSync(destinationPath, { recursive: true });
+            updateDirectory(sourcePath, destinationPath);
+        }
+        else {
+            fs_1.default.copyFileSync(sourcePath, destinationPath);
+        }
+    });
+};
 const getProjects = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const email = req.params.email;
@@ -67,7 +88,6 @@ const getProjects = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.getProjects = getProjects;
 const saveProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('Request body:', req.body);
     try {
         const { user, project } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
@@ -75,7 +95,6 @@ const saveProject = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!fs_1.default.existsSync(savedPath)) {
             fs_1.default.mkdirSync(savedPath, { recursive: true });
         }
-        copyDirectory(workspace, savedPath);
         const userId = yield db_1.default.users.findUnique({
             where: { email: user },
         });
@@ -83,6 +102,18 @@ const saveProject = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             res.status(400).json({ error: 'User not found' });
             return;
         }
+        const existingProject = yield db_1.default.projects.findFirst({
+            where: {
+                name: project,
+                user_id: userId.id,
+            }
+        });
+        if (existingProject) {
+            updateDirectory(workspace, savedPath);
+            res.status(200).json({ error: 'Project saved successfully' });
+            return;
+        }
+        copyDirectory(workspace, savedPath);
         const projectData = yield db_1.default.projects.create({
             data: {
                 name: project,
@@ -148,7 +179,6 @@ const launchReactProject = (req, res) => __awaiter(void 0, void 0, void 0, funct
 exports.launchReactProject = launchReactProject;
 const launchCppProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log('Request body:', req.body);
         const { user } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
         const projectPath = `/home/rudra/Desktop/Dockerimg/cpp`;

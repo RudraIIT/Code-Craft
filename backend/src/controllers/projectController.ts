@@ -26,6 +26,32 @@ const copyDirectory = (source: string, destination: string) => {
     });
 };
 
+const updateDirectory = (source: string, destination: string) => {
+    if (!fs.existsSync(source)) {
+        throw new Error('Source directory does not exist');
+    }
+
+    if (fs.existsSync(destination)) {
+        fs.rmSync(destination, { recursive: true, force: true });
+    }
+
+    fs.mkdirSync(destination, { recursive: true });
+
+    const entries = fs.readdirSync(source, { withFileTypes: true });
+
+    entries.forEach((entry) => {
+        const sourcePath = path.join(source, entry.name);
+        const destinationPath = path.join(destination, entry.name);
+
+        if (entry.isDirectory()) {
+            fs.mkdirSync(destinationPath, { recursive: true });
+            updateDirectory(sourcePath, destinationPath);
+        } else {
+            fs.copyFileSync(sourcePath, destinationPath);
+        }
+    });
+};
+
 const getProjects = async (req: Request, res: Response): Promise<void> => {
     try {
         const email = req.params.email;
@@ -63,7 +89,6 @@ const getProjects = async (req: Request, res: Response): Promise<void> => {
 }
 
 const saveProject = async (req: Request, res: Response): Promise<void> => {
-    console.log('Request body:', req.body);
     try {
         const { user, project } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
@@ -73,8 +98,6 @@ const saveProject = async (req: Request, res: Response): Promise<void> => {
             fs.mkdirSync(savedPath, { recursive: true });
         }
 
-        copyDirectory(workspace, savedPath);
-
         const userId = await prisma.users.findUnique({
             where: { email: user },
         });
@@ -83,6 +106,21 @@ const saveProject = async (req: Request, res: Response): Promise<void> => {
             res.status(400).json({ error: 'User not found' });
             return;
         }
+
+        const existingProject = await prisma.projects.findFirst({
+            where: {
+                name: project,
+                user_id: userId.id,
+            }
+        });
+
+        if (existingProject) {
+            updateDirectory(workspace, savedPath);
+            res.status(200).json({ error: 'Project saved successfully' });
+            return;
+        }
+
+        copyDirectory(workspace, savedPath);
 
         const projectData = await prisma.projects.create({
             data: {
@@ -159,7 +197,6 @@ const launchReactProject = async (req: Request, res: Response): Promise<void> =>
 
 const launchCppProject = async (req: Request, res: Response): Promise<void> => {
     try {
-        console.log('Request body:', req.body);
         const { user } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
         const projectPath = `/home/rudra/Desktop/Dockerimg/cpp`;

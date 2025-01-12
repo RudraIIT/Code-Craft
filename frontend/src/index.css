@@ -80,3 +80,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+.custom-scrollbar {
+  scrollbar-width: none; /* Firefox */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Edge */
+}

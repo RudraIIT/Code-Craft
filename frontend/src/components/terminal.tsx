@@ -4,7 +4,33 @@ import "@xterm/xterm/css/xterm.css";
 import { useSocketContext } from "../context/SocketContext";
 import Cookies from "js-cookie";
 
-const term = new Terminal();
+const term = new Terminal({
+  cursorBlink: true,
+  fontSize: 16,
+  fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+  theme: {
+    background: '#1a1b26',
+    foreground: '#a9b1d6',
+    black: '#32344a',
+    brightBlack: '#444b6a',
+    red: '#f7768e',
+    brightRed: '#ff7a93',
+    green: '#9ece6a',
+    brightGreen: '#b9f27c',
+    yellow: '#e0af68',
+    brightYellow: '#ff9e64',
+    blue: '#7aa2f7',
+    brightBlue: '#7da6ff',
+    magenta: '#ad8ee6',
+    brightMagenta: '#bb9af7',
+    cyan: '#449dab',
+    brightCyan: '#0db9d7',
+    white: '#787c99',
+    brightWhite: '#acb0d0',
+    cursor: '#c0caf5'
+  },
+  allowTransparency: true
+});
 
 export function XTerminal() {
   const terminalRef = useRef<HTMLDivElement | null>(null);
@@ -56,7 +82,7 @@ export function XTerminal() {
       return () => {
         // clearInterval(reconnectInterval);
         if (socket) {
-          socket.emit("disconnect");
+          socket.emit("disconnection");
           socket.off("terminal:data", onTerminalData)
         }
       }

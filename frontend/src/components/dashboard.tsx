@@ -30,7 +30,6 @@ export function Dashboard() {
     const [clicked, setClicked] = useState(false)
     const [projectName, setProjectName] = useState("")
     const [framework, setFramework] = useState("")
-    const navigate = useNavigate()
     const { toast } = useToast();
     const { setProject } = useProject();
     const [loading, setLoading] = useState(false)
@@ -124,6 +123,8 @@ export function Dashboard() {
         
         setLoading(true)
         setProject(projectName)
+
+        Cookies.set('project', projectName)
 
         if (socket) {
             if(framework === "react.js") {
