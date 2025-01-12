@@ -257,7 +257,7 @@ export default function Project() {
           </div>
         )}
 
-        <ResizableHandle withHandle className="bg-gray-700 data-[hover]:bg-gray-600" />
+        {/* <ResizableHandle withHandle className="bg-gray-700 data-[hover]:bg-gray-600" /> */}
 
         {/* Code Editor and Terminal Panels */}
         <ResizablePanel className="h-full w-full relative">
@@ -309,10 +309,10 @@ export default function Project() {
               </Tabs>
             </ResizablePanel>
 
-            <ResizableHandle withHandle className="bg-gray-700 data-[hover]:bg-gray-600" />
+            <ResizableHandle className="bg-gray-700 data-[hover]:bg-gray-600" />
 
             {/* Terminal Panel */}
-            <ResizablePanel defaultSize={30} minSize={20} className="h-full relative overflow-y-auto">
+            <ResizablePanel defaultSize={30} minSize={0} className="h-full relative overflow-hidden">
               <XTerminal />
             </ResizablePanel>
           </ResizablePanelGroup>

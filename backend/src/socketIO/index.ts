@@ -81,7 +81,6 @@ io.on("connection", (socket) => {
     sendUpatedFiles();
 
     socket.on('files:rw', () => {
-        // console.log('Sending files to client');
         sendUpatedFiles();
     });
 
