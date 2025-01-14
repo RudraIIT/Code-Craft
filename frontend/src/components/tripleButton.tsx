@@ -53,8 +53,10 @@ export function TripleButton({ name, username }: TripleButtonProps) {
                     description: 'Project launched successfully'
                 })
 
+                console.log(response.data)
+
                 if (socket) {
-                    socket.emit('newcontainer', { framework: "" })
+                    socket.emit('newcontainer', { framework: response.data.framework })
                     window.location.href = `http://localhost:5173/project`
                 }
             }

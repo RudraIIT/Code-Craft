@@ -126,6 +126,7 @@ export function Dashboard() {
         setProject(projectName)
 
         Cookies.set('project', projectName)
+        Cookies.set('framework', framework)
 
         if (socket) {
             if (framework === "react.js") {

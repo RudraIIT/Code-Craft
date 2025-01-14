@@ -90,7 +90,7 @@ const getProjects = async (req: Request, res: Response): Promise<void> => {
 
 const saveProject = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { user, project } = req.body;
+        const { user, project, framework } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
         const savedPath = `/home/rudra/Desktop/SavedProjects/${user}/${project}`;
 
@@ -127,7 +127,7 @@ const saveProject = async (req: Request, res: Response): Promise<void> => {
                 name: project,
                 user_id: userId.id,
                 path: savedPath,
-                language: 'Javascript',
+                language: framework,
             },
         });
 
@@ -146,6 +146,23 @@ const launchProject = async (req: Request, res: Response): Promise<void> => {
         const { user, project } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
         const projectPath = `/home/rudra/Desktop/SavedProjects/${user}/${project}`;
+        const userId = await prisma.users.findUnique({
+            where: {
+                email: user,
+            }
+        });
+
+        if(!userId) {
+            res.status(400).json({ error: 'User not found' });
+            return;
+        }
+
+        const framework = await prisma.projects.findFirst({
+            where: {
+                name: project,
+                user_id: userId.id,
+            }
+        })
 
         console.log('Workspace Path:', workspace);
         console.log('Project Path:', projectPath);
@@ -161,7 +178,7 @@ const launchProject = async (req: Request, res: Response): Promise<void> => {
 
         copyDirectory(projectPath, workspace);
 
-        res.status(200).json({ message: 'Project launched successfully' });
+        res.status(200).json({ message: 'Project launched successfully',framework:framework?.language });
     } catch (error: any) {
         console.error('Error launching project:', error.message, error.stack);
         res.status(500).json({ error: 'Server Error' });

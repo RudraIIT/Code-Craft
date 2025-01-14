@@ -89,7 +89,7 @@ const getProjects = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.getProjects = getProjects;
 const saveProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { user, project } = req.body;
+        const { user, project, framework } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
         const savedPath = `/home/rudra/Desktop/SavedProjects/${user}/${project}`;
         if (!fs_1.default.existsSync(savedPath)) {
@@ -119,7 +119,7 @@ const saveProject = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 name: project,
                 user_id: userId.id,
                 path: savedPath,
-                language: 'Javascript',
+                language: framework,
             },
         });
         console.log('Saved project data:', projectData);
@@ -136,6 +136,21 @@ const launchProject = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const { user, project } = req.body;
         const workspace = `/home/rudra/Desktop/Container/${user}`;
         const projectPath = `/home/rudra/Desktop/SavedProjects/${user}/${project}`;
+        const userId = yield db_1.default.users.findUnique({
+            where: {
+                email: user,
+            }
+        });
+        if (!userId) {
+            res.status(400).json({ error: 'User not found' });
+            return;
+        }
+        const framework = yield db_1.default.projects.findFirst({
+            where: {
+                name: project,
+                user_id: userId.id,
+            }
+        });
         console.log('Workspace Path:', workspace);
         console.log('Project Path:', projectPath);
         if (!fs_1.default.existsSync(projectPath)) {
@@ -146,7 +161,7 @@ const launchProject = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             fs_1.default.mkdirSync(workspace, { recursive: true });
         }
         copyDirectory(projectPath, workspace);
-        res.status(200).json({ message: 'Project launched successfully' });
+        res.status(200).json({ message: 'Project launched successfully', framework: framework === null || framework === void 0 ? void 0 : framework.language });
     }
     catch (error) {
         console.error('Error launching project:', error.message, error.stack);

@@ -3,9 +3,9 @@ import { useSocketContext } from "@/context/SocketContext"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 import Cookies from "js-cookie"
-import Iframe from "react-iframe"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronRight, ChevronLeft, Play, Save, LogOut } from 'lucide-react'
+import { DialogPreview } from "@/components/dialog-preview"
 
 import {
   ResizableHandle,
@@ -33,6 +33,8 @@ export default function Project() {
   const projectName = Cookies.get("project")
   const { toast } = useToast()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const framework = Cookies.get("framework")
+  const [previewOpen, setPreviewOpen] = useState(false)
 
 
   const handleRename = (node: Node, newName: string) => {
@@ -126,6 +128,7 @@ export default function Project() {
       const response = await axios.post(`http://localhost:3001/api/projects/saveFile`, {
         user: user,
         project: projectName,
+        framework: framework,
       }, {
         withCredentials: true,
       });
@@ -286,7 +289,7 @@ export default function Project() {
               <Tabs defaultValue="editor" className="h-full w-full bg-gray-900">
                 <TabsList className="h-10 flex items-center gap-4 bg-gray-800">
                   <TabsTrigger value="editor">Editor</TabsTrigger>
-                  <TabsTrigger value="preview">Preview</TabsTrigger>
+                  <TabsTrigger value="preview" onClick={() => setPreviewOpen(true)}>Preview</TabsTrigger>
                 </TabsList>
                 <TabsContent value="editor" className="h-full w-full">
                   <CodeEditor
@@ -295,18 +298,14 @@ export default function Project() {
                     onChange={(updatedContent: any) => setFileContent(updatedContent)}
                   />
                 </TabsContent>
-                <TabsContent value="preview" className="h-full w-full">
-                  <Iframe
-                    url="http://localhost:8080/"
-                    width="100%"
-                    height="100%"
-                    id="myId"
-                    className="h-full w-full"
-                    display="initial"
-                    position="relative"
-                  />
-                </TabsContent>
               </Tabs>
+
+              {/* Preview Dialog */}
+              <DialogPreview 
+                url="http://localhost:8080/"
+                open={previewOpen}
+                onOpenChange={setPreviewOpen}
+              />
             </ResizablePanel>
 
             <ResizableHandle className="bg-gray-700 data-[hover]:bg-gray-600" />
