@@ -264,12 +264,17 @@ io.on("connection", (socket) => {
     socket.on('run', ({ filename }) => {
         const container = clientContainers[userId];
         const framework = userToFrameworkMap[userId];
-        // console.log('Framework:', framework);
         if (framework === 'cpp-app:latest') {
-            // console.log('Compiling file:', filename);
-            container.exec({ Cmd: ['g++', filename, '-o', 'output'] }, (err, exec) => {
+            const command = `rm -rf output && g++ ${filename} -o output && ./output`;
+            container.exec({
+                Cmd: ['bash', '-c', `cd /workspace/${userId} && ${command}`],
+                AttachStdin: true,
+                AttachStdout: true,
+                AttachStderr: true,
+                Tty: true,
+            }, (err, exec) => {
                 if (err) {
-                    console.error('Error compiling file:', err);
+                    console.error('Error creating exec:', err);
                     return;
                 }
                 exec === null || exec === void 0 ? void 0 : exec.start({ hijack: true, stdin: true }, (err, stream) => {
@@ -277,7 +282,7 @@ io.on("connection", (socket) => {
                         console.error('Error starting exec:', err);
                         return;
                     }
-                    stream.on('data', (data) => {
+                    stream === null || stream === void 0 ? void 0 : stream.on('data', (data) => {
                         const streamType = data.readUInt8(0);
                         const payload = data.slice(8);
                         if (streamType === 1) {
@@ -287,8 +292,17 @@ io.on("connection", (socket) => {
                             console.error('Error:', payload.toString());
                         }
                     });
+                    stream === null || stream === void 0 ? void 0 : stream.on('end', () => {
+                        socket.emit('terminal:data', '\n');
+                    });
                     socket.on('terminal:write', (data) => {
-                        stream.write(data);
+                        if (!data.endsWith('\n')) {
+                            data += '\n';
+                        }
+                        stream === null || stream === void 0 ? void 0 : stream.write(data);
+                        setTimeout(() => {
+                            stream === null || stream === void 0 ? void 0 : stream.write('\n');
+                        }, 10);
                     });
                 });
             });

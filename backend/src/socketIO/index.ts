@@ -296,35 +296,59 @@ io.on("connection", (socket) => {
     socket.on('run', ({ filename }) => {
         const container = clientContainers[userId];
         const framework = userToFrameworkMap[userId];
-        // console.log('Framework:', framework);
+    
         if (framework === 'cpp-app:latest') {
-            // console.log('Compiling file:', filename);
-            container.exec({ Cmd: ['g++', filename, '-o', 'output'] }, (err, exec) => {
+            const command = `rm -rf output && g++ ${filename} -o output && ./output`;
+    
+            container.exec({
+                Cmd: ['bash', '-c', `cd /workspace/${userId} && ${command}`],
+                AttachStdin: true,
+                AttachStdout: true,
+                AttachStderr: true,
+                Tty: true,
+            }, (err, exec) => {
                 if (err) {
-                    console.error('Error compiling file:', err);
+                    console.error('Error creating exec:', err);
                     return;
                 }
-                exec?.start({ hijack: true, stdin: true }, (err: any, stream: any) => {
+    
+                exec?.start({ hijack: true, stdin: true }, (err, stream) => {
                     if (err) {
                         console.error('Error starting exec:', err);
                         return;
                     }
-                    stream.on('data', (data: any) => {
+    
+                    stream?.on('data', (data: any) => {
                         const streamType = data.readUInt8(0);
                         const payload = data.slice(8);
+    
                         if (streamType === 1) {
                             socket.emit('terminal:data', payload.toString());
                         } else if (streamType === 2) {
                             console.error('Error:', payload.toString());
                         }
                     });
+
+                    stream?.on('end', () => {
+                        socket.emit('terminal:data', '\n');
+                    });
+
                     socket.on('terminal:write', (data) => {
-                        stream.write(data);
+                        if(!data.endsWith('\n')) {
+                            data += '\n';
+                        }
+
+                        stream?.write(data);
+
+                        setTimeout(() => {
+                            stream?.write('\n');
+                        },10);
                     });
                 });
-            })
+            });
         }
     });
+    
 
     socket.on('files:rename', ({ oldName, newName }) => {
         const oldPath = path.join(workspacePath, oldName);

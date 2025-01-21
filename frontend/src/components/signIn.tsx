@@ -82,7 +82,7 @@ export function SignInForm({
                   <div className="flex flex-col items-center text-center">
                     <h1 className="text-2xl font-bold text-white">Welcome back</h1>
                     <p className="text-balance text-gray-400">
-                      Login to your Acme Inc account
+                      Login to your Code-Craft Inc account
                     </p>
                   </div>
                   <div className="grid gap-2">

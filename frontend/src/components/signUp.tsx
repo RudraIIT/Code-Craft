@@ -83,7 +83,7 @@ export function SignUpForm({
                                     <div className="flex flex-col items-center text-center">
                                         <h1 className="text-2xl font-bold text-white">Create an account</h1>
                                         <p className="text-balance text-gray-400">
-                                            Sign up for your Acme Inc account
+                                            Sign up for your Code-Craft Inc account
                                         </p>
                                     </div>
                                     <div className="grid gap-2">

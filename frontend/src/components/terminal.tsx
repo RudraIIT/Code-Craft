@@ -61,6 +61,7 @@ export function XTerminal() {
 
       function onTerminalData(data: any) {
         term.write(data);
+        term.scrollToBottom();
       }
 
       if (socket) {

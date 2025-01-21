@@ -59,6 +59,7 @@ const loginUser = async(req:Request, res:Response) => {
 
         sendToken(user, 200, res);
     } catch (error) {
+        console.log(error)
         res.status(500).json({error: 'Server Error'});
         return;
     }

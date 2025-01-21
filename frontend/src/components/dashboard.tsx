@@ -25,6 +25,7 @@ import { useSocketContext } from "../context/SocketContext"
 import { useToast } from "@/hooks/use-toast"
 import { useProject } from "@/context/ProjectContext"
 import TransitionPage from "@/components/transition-page"
+import { useNavigate } from "react-router-dom"
 
 export function Dashboard() {
     const { socket } = useSocketContext();
@@ -35,6 +36,7 @@ export function Dashboard() {
     const { setProject } = useProject();
     const [loading, setLoading] = useState(false)
     const user = Cookies.get('user');
+    const navigate = useNavigate();
 
     const frameworkToMessageMap = {
         "react.js": "Please write npm install and npm run dev to start the project",
@@ -200,7 +202,7 @@ export function Dashboard() {
                             </form>
                         </CardContent>
                         <CardFooter className="flex justify-between">
-                            <Button variant="outline" className="bg-gray-700 text-white hover:bg-gray-600">Cancel</Button>
+                            <Button onClick={() => navigate(-1)} variant="outline" className="bg-gray-700 text-white hover:bg-gray-600">Cancel</Button>
                             <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">Launch</Button>
                         </CardFooter>
                     </Card>

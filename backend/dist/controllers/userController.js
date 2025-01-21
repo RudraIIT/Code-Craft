@@ -65,6 +65,7 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         (0, jwtToken_1.default)(user, 200, res);
     }
     catch (error) {
+        console.log(error);
         res.status(500).json({ error: 'Server Error' });
         return;
     }

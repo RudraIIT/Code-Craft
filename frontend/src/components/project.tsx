@@ -311,7 +311,7 @@ export default function Project() {
             <ResizableHandle className="bg-gray-700 data-[hover]:bg-gray-600" />
 
             {/* Terminal Panel */}
-            <ResizablePanel defaultSize={30} minSize={0} className="h-full relative overflow-hidden">
+            <ResizablePanel defaultSize={30} minSize={0} className="h-2/5 relative overflow-hidden">
               <XTerminal />
             </ResizablePanel>
           </ResizablePanelGroup>
